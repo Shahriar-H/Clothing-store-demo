@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Platform, View, Text, Pressable, ScrollView, TextInput, Modal } from 'react-native';
+import { Image, StyleSheet, Platform, View, Text, Pressable, ScrollView, TextInput, Modal, RefreshControl } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -7,13 +7,17 @@ import { ThemedView } from '@/components/ThemedView';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CategoryScrollView from '@/components/CategoryScrollView';
 import ProductImageScrollView from '@/components/ProductImageScrollView';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import PopularProducts from '@/components/PopularProducts';
 import TabLayout from './_layout';
 import {RootStackParamList, Product} from '../../types/navigation'
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { NavigationProp, useIsFocused, useNavigation } from '@react-navigation/native';
 import SearchBar  from '../../components/SearchBar';
 import {useSearchBarPressed} from '../../components/searchBarPressed';
+import React from 'react';
+import { apiUrl } from '@/assets/lib';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AuthProvider } from '../_layout';
 
 type product ={
   image: string,
@@ -23,18 +27,56 @@ type product ={
   description:string;
 }
 
-export default function HomeScreen() {
+const HomeScreen: React.FC=()=> {
   const[products, setProducts] = useState<product[]>([]);
   const[selectedCat, setSelectedCat] = useState<string>('All');
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const searchBarPressed = useSearchBarPressed();
+  const {data,loginFun} = useContext<any>(AuthProvider)
+  const isFocused = useIsFocused()
+  const [refreshing, setRefreshing] = useState(false);
 
-  
+  const onRefresh = ()=>{
+    setRefreshing(true);
+    setProducts([])
+    setTimeout(() => {
+      getPreduct()
+      setRefreshing(false);
+    }, 2000); // Simulated network request
+  }
+
+  const getData = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('login');
+      console.log(jsonValue);
+      
+      if(jsonValue != null){
+        const data = JSON.parse(jsonValue)
+        loginFun(data)
+      }
+      
+    } catch (e) {
+      // error reading value
+    }
+  };
+
   useEffect(() => {
-    fetch('https://fakestoreapi.com/products?limit=5')
+    getData()
+  }, []);
+
+  const getPreduct = ()=>{
+    fetch(apiUrl+"/get-item",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({table:"products", query:{status:'Approved'}})
+    })
     .then(result => result.json())
     .then(data => {
-      const productData: product[] = data.map((singleProd:any) => {
+     
+      
+      const productData: product[] = data?.result.map((singleProd:any) => {
         return({
         image:singleProd.image,
         title:singleProd.title,
@@ -47,7 +89,12 @@ export default function HomeScreen() {
       
     })
     .catch((error) => console.log('error fetching data', error));
-  },[]);
+  }
+
+  
+  useEffect(() => {
+    getPreduct()
+  },[isFocused]);
 
 
   const handleCatSelect = (category: string) => {
@@ -58,7 +105,7 @@ export default function HomeScreen() {
   }
   return (
     <>
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View className="flex flex-row justify-between p-4 mt-5">
           <Pressable>
           <Icon name="navicon" size={30} color="black" />
@@ -71,7 +118,7 @@ export default function HomeScreen() {
           </View>
         </View>
         <View className="flex flex-col">
-        {searchBarPressed.pressed && <View onTouchEnd={handleSearch} className=" bg-transparent  w-[100vw] h-[100vh]"><SearchBar/></View>}
+        {searchBarPressed.pressed && <View className=" bg-transparent  w-[100vw] h-[100vh]"><SearchBar/></View>}
          <Text className="font-bold text-3xl ml-5" >Find Your Clothes</Text>   
 
          
@@ -103,3 +150,5 @@ export default function HomeScreen() {
     </> 
   );
 }
+
+export default HomeScreen

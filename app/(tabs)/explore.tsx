@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Image, Platform, ScrollView, View, Text, Pressable, TouchableOpacity } from 'react-native';
+import { StyleSheet, Image, Platform, ScrollView, View, Text, Pressable, TouchableOpacity, RefreshControl } from 'react-native';
 
 import { Collapsible } from '@/components/Collapsible';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -9,27 +9,65 @@ import { ThemedView } from '@/components/ThemedView';
 import { useEffect, useRef, useState } from 'react';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList, Product } from '../types/navigation'; 
+import { apiUrl } from '@/assets/lib';
 
 
 export default function TabTwoScreen() {
   const[allProducts, setAllProducts] = useState<Product[]>([]);
   const[currentPage, setCurrentPage] = useState<number>(1);
+  const [refreshing, setRefreshing] = useState(false);
+  
+    const onRefresh = ()=>{
+      setRefreshing(true);
+      setAllProducts([])
+      setTimeout(() => {
+        getPreduct()
+        setRefreshing(false);
+      }, 2000); // Simulated network request
+    }
+  const getPreduct = ()=>{
+      fetch(apiUrl+"/get-item",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({table:"products", query:{status:'Approved'}})
+      })
+      .then(result => result.json())
+      .then(data => {
+       
+        
+        const productData: Product[] = data?.result.map((singleProd:any) => {
+          return({
+          image:singleProd.image,
+          title:singleProd.title,
+          price:singleProd.price,
+          category:singleProd.category,
+          description:singleProd.description
+          })
+        })
+        setAllProducts(productData);
+        
+      })
+      .catch((error) => console.log('error fetching data', error));
+    }
   const itemsPerPage = 5;
   useEffect(() => {
-    fetch('https://fakestoreapi.com/products?limit=10')
-    .then(result => result.json())
-    .then(data => {
-      const allProdsData: Product[] = data.map((prod:Product) => {
-        return({
-            image: prod.image,
-            title: prod.title,
-            price: prod.price,
-            category: prod.category,
-            description:prod.description
-          })
-      })
-      setAllProducts(allProdsData);
-    })
+    // fetch('https://fakestoreapi.com/products?limit=10')
+    // .then(result => result.json())
+    // .then(data => {
+    //   const allProdsData: Product[] = data.map((prod:Product) => {
+    //     return({
+    //         image: prod.image,
+    //         title: prod.title,
+    //         price: prod.price,
+    //         category: prod.category,
+    //         description:prod.description
+    //       })
+    //   })
+    //   setAllProducts(allProdsData);
+    // })
+    getPreduct()
   },[])
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = (startIndex + itemsPerPage);
@@ -57,7 +95,7 @@ export default function TabTwoScreen() {
   
 
   return (
-    <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
+    <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <Text className="text-3xl font-light text-fuchsia-600  mt-5  text-center p-4" >
         Browse through everything
       </Text>

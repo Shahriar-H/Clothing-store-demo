@@ -2,6 +2,7 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react"
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { RootStackParamList } from "@/types/navigation";
+import { apiUrl } from "@/assets/lib";
 type Product={
     image:string,
     title:string,
@@ -14,20 +15,27 @@ const PopularProducts = () => {
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
     useEffect(() => {
-    fetch('https://fakestoreapi.com/products/category/jewelery')
-    .then(response => response.json())
-    .then(data => {
-      const productData:Product[] = data.map((product:Product) => {
-        return(
-            {   image: product.image,
-                title: product.title,
-                price: product.price,
-                description:product.description
-            }
-        )})
-       setProducts(productData);
-    })
-},[])
+        fetch(apiUrl+"/get-item",{
+            method:"POST",
+            headers:{
+            "Content-Type":"application/json"
+            },
+            body: JSON.stringify({table:"products", query:{ispopular:"true",status:'Approved'}})
+        })
+        .then(response => response.json())
+        .then(data => {
+            
+        const productData:Product[] = data?.result.map((product:Product) => {
+            return(
+                {   image: product.image,
+                    title: product.title,
+                    price: product.price,
+                    description:product.description
+                }
+            )})
+        setProducts(productData);
+        })
+    },[])
 return(
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         

@@ -40,6 +40,16 @@ export default function TabLayout() {
           ),
         }}
       />
+       <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: '',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'grid' : 'grid-outline'} color={color} />
+            
+          ),
+        }}
+      />
       
     </Tabs>
   ) ;
