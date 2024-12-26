@@ -1,4 +1,4 @@
-# Welcome  👋
+# Instructions-  👋
 1. Just run `npm install`
 2. Then Create a development build `eas build --profile development --platform android` using this command or run directly on simulator `npx expo run:android`
 3. then install the dev builds on your simulator or physical device
