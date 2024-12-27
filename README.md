@@ -7,6 +7,8 @@
 6. then its ready to see.
 
    For useing the Image picker package, I need to use the dev builds. so I eject from expo bare app.
+   Demonstration video
+   https://youtu.be/PFO894ciw5M?si=7ol9SaODDpLgI_fW
 ------------
 
 
